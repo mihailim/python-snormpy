@@ -60,6 +60,11 @@ snmpclient.SnmpClient.get(oid)
 Takes a named oid, queries the server and returns the value of that oid on the
 server.
 
+snmpclient.SnmpClient.set(oid, value)
+------------------------------
+Takes a named oid, queries the server and sets the value of that oid on the
+server to the given value.
+
 snmpclient.SnmpClient.gettable(oid)
 -----------------------------------
 Takes a named oid, walks that table and returns a list of (oid, value) pairs in

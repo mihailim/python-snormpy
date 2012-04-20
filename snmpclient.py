@@ -107,6 +107,15 @@ class SnmpClient(object):
             raise RuntimeError("SNMPget of %s on %s failed" % (oid, self.host))
         return varBinds[0][1]
 
+    def set(self, oid, value):
+        """Set a specific node in the tree to the given value"""
+        noid = nodeid(oid)
+        (errorIndication, errorStatus, errorIndex, varBinds) = \
+            cmdgen.CommandGenerator().setCmd(self.auth, cmdgen.UdpTransportTarget((self.host, self.port)), (noid, value))
+        if errorIndication or errorStatus:
+            raise RuntimeError("SNMPset of %s -> %s on %s failed" % (oid, value, self.host))
+        return varBinds[0][1]
+
     def gettable(self, oid):
         """Get a complete subtable"""
         noid = nodeid(oid)
