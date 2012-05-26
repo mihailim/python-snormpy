@@ -19,6 +19,7 @@
 import pysnmp.entity.rfc3413.oneliner.cmdgen as cmdgen
 from pysnmp.smi import builder, view
 from pysnmp.smi.error import SmiError
+from os.path import normpath
 
 __all__ = ['V1', 'V2', 'V2C', 'add_mib_path', 'load_mibs',
            'nodeinfo', 'nodename', 'nodeid', 'SnmpClient']
@@ -33,7 +34,12 @@ __mibViewController = view.MibViewController(__mibBuilder)
 
 def add_mib_path(*path):
     """Add a directory to the MIB search path"""
-    __mibBuilder.setMibPath(*(__mibBuilder.getMibPath() + path))
+    currentpath = list(__mibBuilder.getMibPath())
+    newpath = map(normpath, path)
+    for p in newpath:
+        if p not in currentpath:
+            currentpath.append(p)
+    __mibBuilder.setMibPath(*(currentpath))
 
 def load_mibs(*modules):
     """Load one or more mibs"""
