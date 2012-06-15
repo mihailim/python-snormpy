@@ -1,7 +1,8 @@
 # Wrapper around pysnmp for easy access to snmp-based information
 # (c)2008-2010 Dennis Kaarsemaker
+# (c)2012 Mike Bryant
 #
-# Latest version can be found on http://github.com/seveas/python-snmpclient
+# Latest version can be found on http://github.com/LeaChimUK/python-snormpy
 # 
 # This script is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -22,29 +23,28 @@ from pysnmp.smi.error import SmiError
 from os.path import normpath
 import socket
 
-__all__ = ['V1', 'V2', 'V2C', 'add_mib_path', 'load_mibs',
-           'nodeinfo', 'nodename', 'nodeid', 'SnmpClient']
+__all__ = ['SnormpyClient', 'SnormpyException']
 
 # Snmp version constants
 V1 = 0
 V2 = V2C = 1
 
-class SnmpException(Exception):
+class SnormpyException(Exception):
     pass
 
-class SnmpConnectionException(SnmpException):
+class SnormpyConnectionException(SnormpyException):
     pass
 
-class SnmpGetException(SnmpException):
+class SnormpyGetException(SnormpyException):
     pass
 
-class SnmpSetException(SnmpException):
+class SnormpySetException(SnormpyException):
     pass
 
-class SnmpBadTableException(SnmpException):
+class SnormpyBadTableException(SnormpyException):
     pass
 
-class SnmpClient(object):
+class Client(object):
     """Easy access to an snmp deamon on a host"""
 
     def __init__(self, host, *communities, **kwargs):
@@ -71,7 +71,7 @@ class SnmpClient(object):
                 (errorIndication, errorStatus, errorIndex, varBinds) = \
                     cmdgen.CommandGenerator().getCmd(auth, cmdgen.UdpTransportTarget((self.host, port)), noid)
             except socket.gaierror:
-                raise SnmpConnectionException
+                raise SnormpyConnectionException
             if errorIndication == 'requestTimedOut':
                 continue
             else:
@@ -80,7 +80,7 @@ class SnmpClient(object):
                 self.port = port
                 break
         if not alive:
-            raise SnmpConnectionException("Couldn't connect to %s" % host)
+            raise SnormpyConnectionException("Couldn't connect to %s" % host)
 
 
     # The internal mib builder
@@ -137,7 +137,7 @@ class SnmpClient(object):
         try:
             name = name.replace('_', '-')
             self.load_mibs(name)
-            return SnmpModuleClient(self, name)
+            return SnormpyModuleClient(self, name)
         except SmiError:
             raise AttributeError, name
 
@@ -156,7 +156,7 @@ class SnmpClient(object):
         (errorIndication, errorStatus, errorIndex, varBinds) = \
             cmdgen.CommandGenerator().getCmd(self.auth, cmdgen.UdpTransportTarget((self.host, self.port)), noid)
         if errorIndication:
-            raise SnmpGetException("SNMPget of %s on %s failed" % (oid, self.host))
+            raise SnormpyGetException("SNMPget of %s on %s failed" % (oid, self.host))
         return varBinds[0][1]
 
     def set(self, oid, value):
@@ -168,7 +168,7 @@ class SnmpClient(object):
         (errorIndication, errorStatus, errorIndex, varBinds) = \
             cmdgen.CommandGenerator().setCmd(self.auth, cmdgen.UdpTransportTarget((self.host, self.port)), (noid, value))
         if errorIndication or errorStatus:
-            raise SnmpSetException("SNMPset of %s -> %s on %s failed" % (oid, value, self.host))
+            raise SnormpySetException("SNMPset of %s -> %s on %s failed" % (oid, value, self.host))
         return varBinds[0][1]
 
     def gettable(self, oid):
@@ -180,7 +180,7 @@ class SnmpClient(object):
         (errorIndication, errorStatus, errorIndex, varBinds) = \
             cmdgen.CommandGenerator().bulkCmd(self.auth, cmdgen.UdpTransportTarget((self.host, self.port)), 0, 100, noid)
         if errorIndication:
-            raise SnmpGetException("SNMPget of %s on %s failed" % (oid, self.host))
+            raise SnormpyGetException("SNMPget of %s on %s failed" % (oid, self.host))
         return [x[0] for x in varBinds if x[0][0].prettyPrint().startswith(self.todotted(noid))]
 
     def matchtables(self, index, tables):
@@ -212,9 +212,11 @@ class SnmpClient(object):
                 return result
             except KeyError:
                 pass
-        raise SnmpBadTableException
+        raise SnormpyBadTableException
 
-class SnmpModuleClient(object):
+SnormpyClient = Client
+
+class SnormpyModuleClient(object):
     def __init__(self, client, module):
         self.client = client
         self.module = module
@@ -222,7 +224,7 @@ class SnmpModuleClient(object):
     def nextlevel(self, name):
         try:
             oid = self.client.nodeid('%s::%s' % (self.module, name))
-            return SnmpOIDClient(self.client, oid)
+            return SnormpyOIDClient(self.client, oid)
         except SmiError:
             raise AttributeError, name
 
@@ -241,14 +243,14 @@ class SnmpModuleClient(object):
         results = self.match(*tablenames)
         return dict([(resline[0], dict(zip(tablenames, resline[1]))) for resline in results.iteritems()])
 
-class SnmpOIDClient(object):
+class SnormpyOIDClient(object):
     def __init__(self, client, oid):
         self.client = client
         self.oid = oid
 
     def nextlevel(self, name):
         try:
-            return SnmpOIDClient(self.client, self.oid + (int(name),))
+            return SnormpyOIDClient(self.client, self.oid + (int(name),))
         except ValueError:
             raise AttributeError, name
 
