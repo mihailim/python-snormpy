@@ -1,13 +1,13 @@
 import os
 from setuptools import setup
  
-setup(name='python-snmpclient',
-    version="0.4",
+setup(name='snormpy',
+    version="0.5",
     description='Wrapper around pysnmp4 for easier snmp querying',
     author='Dennis Kaarsemaker',
     author_email='dennis@kaarsemaker.net',
-    py_modules=['snmpclient'],
-    url='http://github.com/seveas/python-snmpclient',
+    py_modules=['snormpy'],
+    url='http://github.com/LeaChimUK/python-snormpy',
     classifiers=[
         "Intended Audience :: Developers",
         "Intended Audience :: System Administrators",
