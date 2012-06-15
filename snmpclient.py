@@ -35,16 +35,21 @@ class SnmpException(Exception):
 class SnmpConnectionException(SnmpException):
     pass
 
-class SnmpGetException(Exception):
+class SnmpGetException(SnmpException):
     pass
 
-class SnmpSetException(Exception):
+class SnmpSetException(SnmpException):
+    pass
+
+class SnmpBadTableException(SnmpException):
     pass
 
 class SnmpClient(object):
     """Easy access to an snmp deamon on a host"""
 
-    def __init__(self, host, *communities):
+    def __init__(self, host, *communities, **kwargs):
+        self.retrylimit = kwargs['retrylimit'] if 'retrylimit' in kwargs else 5
+
         """Set up the client and detect the community to use"""
         self.mibBuilder = builder.MibBuilder()
         self.mibViewController = view.MibViewController(self.mibBuilder)
@@ -181,28 +186,33 @@ class SnmpClient(object):
     def matchtables(self, index, tables):
         """Match a list of tables using either a specific index table or the
            common tail of the OIDs in the tables"""
-        oid_to_index = {}
-        result = {}
-        indexlen = 1
-        if index:
-            #  Use the index if available
-            for oid, index in self.gettable(index):
-                oid_to_index[oid[-indexlen:]] = index
-                result[index] = []
-        else:
-            # Generate an index from the first table
-            baselen = len(self.nodeid(tables[0]))
-            for oid, value in self.gettable(tables[0]):
-                indexlen = len(oid) - baselen
-                oid_to_index[oid[-indexlen:]] = oid[-indexlen:]
-                result[oid[-indexlen:]] = [value]
-            tables = tables[1:]
-        # Fetch the tables and match indices
-        for table in tables:
-            for oid, value in self.gettable(table):
-                index = oid_to_index[oid[-indexlen:]]
-                result[index].append(value)
-        return result
+        for i in range(self.retrylimit):
+            try:
+                oid_to_index = {}
+                result = {}
+                indexlen = 1
+                if index:
+                    #  Use the index if available
+                    for oid, index in self.gettable(index):
+                        oid_to_index[oid[-indexlen:]] = index
+                        result[index] = []
+                else:
+                    # Generate an index from the first table
+                    baselen = len(self.nodeid(tables[0]))
+                    for oid, value in self.gettable(tables[0]):
+                        indexlen = len(oid) - baselen
+                        oid_to_index[oid[-indexlen:]] = oid[-indexlen:]
+                        result[oid[-indexlen:]] = [value]
+                    tables = tables[1:]
+                # Fetch the tables and match indices
+                for table in tables:
+                    for oid, value in self.gettable(table):
+                        index = oid_to_index[oid[-indexlen:]]
+                        result[index].append(value)
+                return result
+            except KeyError:
+                pass
+        raise SnmpBadTableException
 
 class SnmpModuleClient(object):
     def __init__(self, client, module):
