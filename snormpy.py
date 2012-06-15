@@ -183,7 +183,7 @@ class Client(object):
             raise SnormpyGetException("SNMPget of %s on %s failed" % (oid, self.host))
         return [x[0] for x in varBinds if x[0][0].prettyPrint().startswith(self.todotted(noid))]
 
-    def matchtables(self, index, tables):
+    def matchtables(self, index_table, base_tables):
         """Match a list of tables using either a specific index table or the
            common tail of the OIDs in the tables"""
         for i in range(self.retrylimit):
@@ -191,9 +191,10 @@ class Client(object):
                 oid_to_index = {}
                 result = {}
                 indexlen = 1
-                if index:
+                tables = base_tables
+                if index_table:
                     #  Use the index if available
-                    for oid, index in self.gettable(index):
+                    for oid, index in self.gettable(index_table):
                         oid_to_index[oid[-indexlen:]] = index
                         result[index] = []
                 else:
