@@ -124,6 +124,10 @@ class SnmpClient(object):
         oid = mibnode.getName() + ids
         return oid
 
+    def todotted(self, oid):
+        """Translate tuple to dotted form"""
+        return ".".join(map(str, oid))
+
     def nextlevel(self, name):
         try:
             name = name.replace('_', '-')
@@ -169,10 +173,10 @@ class SnmpClient(object):
         else:
             noid = oid
         (errorIndication, errorStatus, errorIndex, varBinds) = \
-            cmdgen.CommandGenerator().nextCmd(self.auth, cmdgen.UdpTransportTarget((self.host, self.port)), noid)
+            cmdgen.CommandGenerator().bulkCmd(self.auth, cmdgen.UdpTransportTarget((self.host, self.port)), 0, 100, noid)
         if errorIndication:
             raise SnmpGetException("SNMPget of %s on %s failed" % (oid, self.host))
-        return [x[0] for x in varBinds]
+        return [x[0] for x in varBinds if x[0][0].prettyPrint().startswith(self.todotted(noid))]
 
     def matchtables(self, index, tables):
         """Match a list of tables using either a specific index table or the
@@ -187,7 +191,7 @@ class SnmpClient(object):
                 result[index] = []
         else:
             # Generate an index from the first table
-            baselen = len(nodeid(tables[0]))
+            baselen = len(self.nodeid(tables[0]))
             for oid, value in self.gettable(tables[0]):
                 indexlen = len(oid) - baselen
                 oid_to_index[oid[-indexlen:]] = oid[-indexlen:]
@@ -220,6 +224,13 @@ class SnmpModuleClient(object):
     def __getitem__(self, name):
         return self.nextlevel(str(name))
 
+    def match(self, *tablenames):
+        return self.client.matchtables(None, ["%s::%s" % (self.module, tn) for tn in tablenames])
+
+    def match_dict(self, *tablenames):
+        results = self.match(*tablenames)
+        return dict([(resline[0], dict(zip(tablenames, resline[1]))) for resline in results.iteritems()])
+
 class SnmpOIDClient(object):
     def __init__(self, client, oid):
         self.client = client
@@ -239,10 +250,9 @@ class SnmpOIDClient(object):
     def __getitem__(self, name):
         return self.nextlevel(str(name))
 
-    @property
     def value(self):
         return self.client.get(self.oid)
 
-    @property
     def table(self):
         return self.client.gettable(self.oid)
+
