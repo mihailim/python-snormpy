@@ -2,7 +2,7 @@ import os
 from setuptools import setup
  
 setup(name='snormpy',
-    version="0.5.1",
+    version="0.5.2",
     description='Wrapper around pysnmp4 for easier snmp querying',
     author='Dennis Kaarsemaker',
     author_email='dennis@kaarsemaker.net',
