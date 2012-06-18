@@ -210,6 +210,11 @@ class Client(object):
                     for oid, value in self.gettable(table):
                         index = oid_to_index[oid[-indexlen:]]
                         result[index].append(value)
+                #Check the table is complete
+                for line in result.itervalues():
+                    if len(line) != len(tables) + 1:
+                        #This line doesn't have enough values, lets try again
+                        raise KeyError
                 return result
             except KeyError:
                 pass
