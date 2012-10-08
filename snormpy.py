@@ -190,29 +190,28 @@ class Client(object):
             try:
                 oid_to_index = {}
                 result = {}
-                indexlen = 1
                 tables = base_tables
                 if index_table:
                     #  Use the index if available
+                    baselen = len(self.nodeid(index_table))
                     for oid, index in self.gettable(index_table):
-                        oid_to_index[oid[-indexlen:]] = index
+                        oid_to_index[oid[-1:]] = index
                         result[index] = []
                 else:
                     # Generate an index from the first table
                     baselen = len(self.nodeid(tables[0]))
                     for oid, value in self.gettable(tables[0]):
-                        indexlen = len(oid) - baselen
-                        oid_to_index[oid[-indexlen:]] = oid[-indexlen:]
-                        result[oid[-indexlen:]] = [value]
+                        oid_to_index[oid[baselen:]] = oid[baselen:]
+                        result[oid[baselen:]] = [value]
                     tables = tables[1:]
                 # Fetch the tables and match indices
                 for table in tables:
                     for oid, value in self.gettable(table):
-                        index = oid_to_index[oid[-indexlen:]]
+                        index = oid_to_index[oid[baselen:]]
                         result[index].append(value)
                 #Check the table is complete
                 for line in result.itervalues():
-                    if len(line) != len(tables) + 1:
+                    if len(line) != len(base_tables):
                         #This line doesn't have enough values, lets try again
                         raise KeyError
                 return result
