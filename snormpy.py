@@ -88,7 +88,7 @@ class Client(object):
 
     def add_mib_path(self, path):
         """Add a directory to the MIB search path"""
-        currentpaths = list(mibBuilder.getMibPath())
+        currentpaths = list(self.mibBuilder.getMibPath())
         newpath = normpath(path)
         if newpath not in currentpaths:
             currentpaths.append(newpath)
