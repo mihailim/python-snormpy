@@ -52,11 +52,18 @@ class TestSnormpyClient(unittest.TestCase):
         res = self._sc.get('SNMPv2-MIB::sysName.0')
         self.assertTrue(len(str(res)) > 0)
 
-    def test_match_tables(self):
-        # This test will fail until we fix the buggy matchtables length check behavior
+    def test_match_tables_with_index(self):
         self._sc.load_mibs('SNMPv2-MIB', 'IF-MIB')
         res = self._sc.matchtables('IF-MIB::ifIndex',
                                    ('IF-MIB::ifDescr', 'IF-MIB::ifPhysAddress', 'IF-MIB::ifOperStatus'))
+        self.assertIsInstance(res, dict)
+        self.assertTrue(len(res) > 0)
+
+    def test_match_tables_without_index(self):
+        self._sc.load_mibs('SNMPv2-MIB', 'IF-MIB')
+        res = self._sc.matchtables(None,
+                                   ('IF-MIB::ifDescr', 'IF-MIB::ifPhysAddress', 'IF-MIB::ifOperStatus'))
+        self.assertIsInstance(res, dict)
         self.assertTrue(len(res) > 0)
 
 

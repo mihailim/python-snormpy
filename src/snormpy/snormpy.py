@@ -189,11 +189,12 @@ class Client(object):
         """Match a list of tables using either a specific index table or the
            common tail of the OIDs in the tables"""
         for i in range(self.retrylimit):
+            # TODO: Avoid using exceptions for flow control
             try:
                 oid_to_index = {}
                 result = {}
                 tables = base_tables
-                if index_table:
+                if index_table is not None:
                     #  Use the index if available
                     baselen = len(self.nodeid(index_table))
                     for oid, index in self.gettable(index_table):
@@ -211,11 +212,13 @@ class Client(object):
                     for oid, value in self.gettable(table):
                         index = oid_to_index[oid[baselen:]]
                         result[index].append(value)
-                #Check the table is complete
-                for line in result.itervalues():
-                    if len(line) != len(base_tables):
-                        #This line doesn't have enough values, lets try again
-                        raise KeyError
+                # Check the table is complete. This check currently always fails when using
+                # an index table, so make it conditional on its existence
+                if index_table is None:
+                    for line in result.itervalues():
+                        if len(line) != len(base_tables):
+                            # This line doesn't have enough values, let's try again
+                            raise KeyError
                 return result
             except KeyError:
                 pass
