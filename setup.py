@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(name='snormpy',
     version='0.5.4',
@@ -20,6 +20,8 @@ setup(name='snormpy',
         'Topic :: Software Development'
     ],
     package_dir={'': 'src'},
-    py_modules=['snormpy'],
+    packages=find_packages('src', exclude = ['test_*']),
+    test_suite='snormpy.test_snormpy',
+    zip_safe=True,
     install_requires=['pysnmp>=4.2.3', 'pysnmp-mibs'],
 )

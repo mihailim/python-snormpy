@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Wrapper around pysnmp for easy access to snmp-based information
 # (c) 2008-2010 Dennis Kaarsemaker
 # (c) 2012 Mike Bryant
