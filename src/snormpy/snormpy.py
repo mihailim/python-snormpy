@@ -28,7 +28,7 @@ import socket
 
 __all__ = ['SnormpyClient', 'SnormpyException']
 
-# Snmp version constants
+# SNMP version constants
 V1 = 0
 V2 = V2C = 1
 
@@ -48,7 +48,7 @@ class SnormpyBadTableException(SnormpyException):
     pass
 
 class Client(object):
-    """Easy access to an snmp deamon on a host"""
+    """Easy access to an SNMP agent on a host"""
 
     def __init__(self, host, *communities, **kwargs):
         self.retrylimit = kwargs['retrylimit'] if 'retrylimit' in kwargs else 5
@@ -74,7 +74,7 @@ class Client(object):
                 (errorIndication, errorStatus, errorIndex, varBinds) = \
                     cmdgen.CommandGenerator().getCmd(auth, cmdgen.UdpTransportTarget((self.host, port)), noid)
             except socket.gaierror:
-                raise SnormpyConnectionException
+                raise SnormpyConnectionException("Couldn't resolve host %s" % host)
             if errorIndication == 'requestTimedOut':
                 continue
             else:
@@ -87,7 +87,6 @@ class Client(object):
 
 
     # The internal mib builder
-
 
     def add_mib_path(self, path):
         """Add a directory to the MIB search path"""
