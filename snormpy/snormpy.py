@@ -47,8 +47,8 @@ class SnormpySetException(SnormpyException):
 class SnormpyBadTableException(SnormpyException):
     pass
 
-class Client(object):
-    """Easy access to an SNMP agent on a host"""
+class SnormpyClient(object):
+    """Easy access to a SNMP agent on a host"""
 
     def __init__(self, host, *communities, **kwargs):
         self.retrylimit = kwargs['retrylimit'] if 'retrylimit' in kwargs else 5
@@ -223,8 +223,6 @@ class Client(object):
             except KeyError:
                 pass
         raise SnormpyBadTableException
-
-SnormpyClient = Client
 
 class SnormpyModuleClient(object):
     def __init__(self, client, module):
