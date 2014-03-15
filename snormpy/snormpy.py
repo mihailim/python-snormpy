@@ -3,7 +3,7 @@
 # Wrapper around pysnmp for easy access to snmp-based information
 # (c) 2008-2010 Dennis Kaarsemaker
 # (c) 2012 Mike Bryant
-# (c) 2012 Mihai Limbășan
+# (c) 2014 Mihai Limbășan
 #
 # Latest version can be found on https://github.com/mihailim/python-snormpy
 # 
