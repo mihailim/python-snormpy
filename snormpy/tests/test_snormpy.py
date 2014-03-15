@@ -59,14 +59,14 @@ class TestSnormpyClient(unittest.TestCase):
     def test_match_tables_with_index(self):
         self._sc.load_mibs('SNMPv2-MIB', 'IF-MIB')
         res = self._sc.matchtables('IF-MIB::ifIndex',
-                                   ('IF-MIB::ifDescr', 'IF-MIB::ifPhysAddress', 'IF-MIB::ifOperStatus'))
+                                   ['IF-MIB::ifDescr', 'IF-MIB::ifPhysAddress', 'IF-MIB::ifOperStatus'])
         self.assertIsInstance(res, dict)
         self.assertTrue(len(res) > 0)
 
     def test_match_tables_without_index(self):
         self._sc.load_mibs('SNMPv2-MIB', 'IF-MIB')
         res = self._sc.matchtables(None,
-                                   ('IF-MIB::ifDescr', 'IF-MIB::ifPhysAddress', 'IF-MIB::ifOperStatus'))
+                                   ['IF-MIB::ifDescr', 'IF-MIB::ifPhysAddress', 'IF-MIB::ifOperStatus'])
         self.assertIsInstance(res, dict)
         self.assertTrue(len(res) > 0)
 
