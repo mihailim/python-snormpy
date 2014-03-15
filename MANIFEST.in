@@ -1,0 +1,8 @@
+include LICENSE.txt
+include README.rst
+
+graft snormpy
+
+global-exclude *~
+global-exclude *.pyo
+global-exclude *.pyc

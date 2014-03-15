@@ -1,0 +1,2 @@
+"pysnmp >= 4.2.3
+pysnmp-mibs
