@@ -11,9 +11,9 @@ from snormpy import (SnormpyClient, SnormpyException, V2C)
 # Please note that the tests use the snmplabs.com public SNMP simulation service
 # thus require a working Internet connection and a working DNS resolver.
 
-TEST_HOST='demo.snmplabs.com'
-TEST_AUTHDATA_V2C={'community': 'public', 'port': 161, 'version': V2C}
-TEST_AUTHDATA_V2C_ALTPORT={'community': 'public', 'port': 1161, 'version': V2C}
+TEST_HOST = 'demo.snmplabs.com'
+TEST_AUTHDATA_V2C = {'community': 'public', 'port': 161, 'version': V2C}
+TEST_AUTHDATA_V2C_ALTPORT = {'community': 'public', 'port': 1161, 'version': V2C}
 
 
 class TestSnormpyClientConstruction(unittest.TestCase):
@@ -48,7 +48,8 @@ class TestSnormpyClient(unittest.TestCase):
         self._sc = SnormpyClient(TEST_HOST, TEST_AUTHDATA_V2C)
 
     def test_get_numeric_oid(self):
-        self.assertTrue(len(self._sc.get((1,3,6,1,2,1,1,5,0))) > 0) # .1.3.6.1.2.1.1.5.0 is SNMPv2-MIB::sysName.0
+        # noinspection PyPep8
+        self.assertTrue(len(self._sc.get((1,3,6,1,2,1,1,5,0))) > 0)  # .1.3.6.1.2.1.1.5.0 is SNMPv2-MIB::sysName.0
 
     def test_get_named_oid(self):
         self._sc.load_mibs('SNMPv2-MIB')
@@ -72,10 +73,10 @@ class TestSnormpyClient(unittest.TestCase):
 
 def suite():
     loader = unittest.TestLoader()
-    suite = unittest.TestSuite()
-    suite.addTest(loader.loadTestsFromTestCase(TestSnormpyClientConstruction))
-    suite.addTest(loader.loadTestsFromTestCase(TestSnormpyClient))
-    return suite
+    tsuite = unittest.TestSuite()
+    tsuite.addTest(loader.loadTestsFromTestCase(TestSnormpyClientConstruction))
+    tsuite.addTest(loader.loadTestsFromTestCase(TestSnormpyClient))
+    return tsuite
 
 
 if __name__ == '__main__':

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Wrapper around pysnmp for easy access to snmp-based information
+"""Wrapper around pysnmp for easy access to SNMP-based information"""
+
 # (c) 2008-2010 Dennis Kaarsemaker
 # (c) 2012 Mike Bryant
 # (c) 2014 Mihai Limbășan
@@ -32,33 +33,38 @@ __all__ = ['SnormpyClient', 'SnormpyException']
 V1 = 0
 V2 = V2C = 1
 
+
 class SnormpyException(Exception):
     pass
+
 
 class SnormpyConnectionException(SnormpyException):
     pass
 
+
 class SnormpyGetException(SnormpyException):
     pass
+
 
 class SnormpySetException(SnormpyException):
     pass
 
+
 class SnormpyBadTableException(SnormpyException):
     pass
+
 
 class SnormpyClient(object):
     """Easy access to a SNMP agent on a host"""
 
     def __init__(self, host, *communities, **kwargs):
+        """Set up the client and detect the community to use"""
         self.retrylimit = kwargs['retrylimit'] if 'retrylimit' in kwargs else 5
 
-        """Set up the client and detect the community to use"""
-        self.mibBuilder = builder.MibBuilder()
-        self.mibViewController = view.MibViewController(self.mibBuilder)
-        # Load basic mibs that come with pysnmp
-        self.load_mibs('SNMPv2-MIB','IF-MIB','IP-MIB','HOST-RESOURCES-MIB','FIBRE-CHANNEL-FE-MIB')
-
+        self.mib_builder = builder.MibBuilder()
+        self.mib_view_controller = view.MibViewController(self.mib_builder)
+        # Load basic MIBs that come with pysnmp
+        self.load_mibs('SNMPv2-MIB', 'IF-MIB', 'IP-MIB', 'HOST-RESOURCES-MIB')
 
         self.host = host
 
@@ -66,16 +72,16 @@ class SnormpyClient(object):
         # Which community to use
         noid = self.nodeid('SNMPv2-MIB::sysName.0')
         for community in communities:
-            auth = cmdgen.CommunityData(community.get('name','snmpclient'), 
-                                        community.get('community', 'public'), 
+            auth = cmdgen.CommunityData(community.get('name', 'snmpclient'),
+                                        community.get('community', 'public'),
                                         community.get('version', V2C))
             port = community.get('port', 161)
             try:
-                (errorIndication, errorStatus, errorIndex, varBinds) = \
-                    cmdgen.CommandGenerator().getCmd(auth, cmdgen.UdpTransportTarget((self.host, port)), noid)
+                (error_indication, error_status, error_index, var_binds) = \
+                    cmdgen.CommandGenerator().getCmd(auth,cmdgen.UdpTransportTarget((self.host, port)), noid)
             except socket.gaierror:
                 raise SnormpyConnectionException("Couldn't resolve host %s" % host)
-            if errorIndication == 'requestTimedOut':
+            if error_indication == 'requestTimedOut':
                 continue
             else:
                 alive = True
@@ -85,22 +91,21 @@ class SnormpyClient(object):
         if not alive:
             raise SnormpyConnectionException("Couldn't connect to %s" % host)
 
-
-    # The internal mib builder
+    # The internal MIB builder
 
     def add_mib_path(self, path):
         """Add a directory to the MIB search path"""
-        currentpaths = list(self.mibBuilder.getMibPath())
+        currentpaths = list(self.mib_builder.getMibPath())
         newpath = normpath(path)
         if newpath not in currentpaths:
             currentpaths.append(newpath)
-        self.mibBuilder.setMibPath(*(currentpaths))
+        self.mib_builder.setMibPath(*currentpaths)
 
     def load_mibs(self, *modules):
         """Load one or more mibs"""
-        for m in modules:
+        for mib_module in modules:
             try:
-                self.mibBuilder.loadModules(m)
+                self.mib_builder.loadModules(mib_module)
             except SmiError, e:
                 if 'already exported' in str(e):
                     continue
@@ -109,28 +114,30 @@ class SnormpyClient(object):
     def nodeinfo(self, oid):
         """Translate dotted-decimal oid to a tuple with symbolic info"""
         if isinstance(oid, basestring):
+            # noinspection PyUnresolvedReferences
             oid = tuple([int(x) for x in oid.split('.') if x])
-        return (self.mibViewController.getNodeLocation(oid), 
-                self.mibViewController.getNodeName(oid))
+        return (self.mib_view_controller.getNodeLocation(oid),
+                self.mib_view_controller.getNodeName(oid))
 
     def nodename(self, oid):
         """Translate dotted-decimal oid or oid tuple to symbolic name"""
-        oid = self.mibViewController.getNodeLocation(oid)
+        oid = self.mib_view_controller.getNodeLocation(oid)
         name = '::'.join(oid[:-1])
         noid = '.'.join([str(x) for x in oid[-1]])
         if noid:
             name += '.' + noid
         return name
-            
+
     def nodeid(self, oid):
         """Translate named oid to dotted-decimal format"""
         ids = oid.split('.')
         symbols = ids[0].split('::')
         ids = tuple([int(x) for x in ids[1:]])
-        mibnode, = self.mibBuilder.importSymbols(*symbols)
+        mibnode, = self.mib_builder.importSymbols(*symbols)
         oid = mibnode.getName() + ids
         return oid
 
+    # noinspection PyMethodMayBeStatic
     def todotted(self, oid):
         """Translate tuple to dotted form"""
         return ".".join(map(str, oid))
@@ -141,7 +148,7 @@ class SnormpyClient(object):
             self.load_mibs(name)
             return SnormpyModuleClient(self, name)
         except SmiError:
-            raise AttributeError, name
+            raise AttributeError(name)
 
     def __getattr__(self, name):
         return self.nextlevel(name)
@@ -155,11 +162,11 @@ class SnormpyClient(object):
             noid = self.nodeid(oid)
         else:
             noid = oid
-        (errorIndication, errorStatus, errorIndex, varBinds) = \
+        (error_indication, error_status, error_index, var_binds) = \
             cmdgen.CommandGenerator().getCmd(self.auth, cmdgen.UdpTransportTarget((self.host, self.port)), noid)
-        if errorIndication:
+        if error_indication:
             raise SnormpyGetException("SNMPget of %s on %s failed" % (oid, self.host))
-        return varBinds[0][1]
+        return var_binds[0][1]
 
     def set(self, oid, value):
         """Set a specific node in the tree to the given value"""
@@ -167,11 +174,12 @@ class SnormpyClient(object):
             noid = self.nodeid(oid)
         else:
             noid = oid
-        (errorIndication, errorStatus, errorIndex, varBinds) = \
-            cmdgen.CommandGenerator().setCmd(self.auth, cmdgen.UdpTransportTarget((self.host, self.port)), (noid, value))
-        if errorIndication or errorStatus:
+        (error_indication, error_status, error_index, var_binds) = \
+            cmdgen.CommandGenerator().setCmd(self.auth, cmdgen.UdpTransportTarget((self.host, self.port)),
+                                             (noid, value))
+        if error_indication or error_status:
             raise SnormpySetException("SNMPset of %s -> %s on %s failed" % (oid, value, self.host))
-        return varBinds[0][1]
+        return var_binds[0][1]
 
     def gettable(self, oid):
         """Get a complete subtable"""
@@ -179,11 +187,12 @@ class SnormpyClient(object):
             noid = self.nodeid(oid)
         else:
             noid = oid
-        (errorIndication, errorStatus, errorIndex, varBinds) = \
-            cmdgen.CommandGenerator().bulkCmd(self.auth, cmdgen.UdpTransportTarget((self.host, self.port)), 0, 100, noid)
-        if errorIndication:
+        (error_indication, error_status, error_index, var_binds) = \
+            cmdgen.CommandGenerator().bulkCmd(self.auth, cmdgen.UdpTransportTarget((self.host, self.port)), 0, 100,
+                                              noid)
+        if error_indication:
             raise SnormpyGetException("SNMPget of %s on %s failed" % (oid, self.host))
-        return [x[0] for x in varBinds if x[0][0].prettyPrint().startswith(self.todotted(noid))]
+        return [x[0] for x in var_binds if x[0][0].prettyPrint().startswith(self.todotted(noid))]
 
     def matchtables(self, index_table, base_tables):
         """Match a list of tables using either a specific index table or the
@@ -224,6 +233,7 @@ class SnormpyClient(object):
                 pass
         raise SnormpyBadTableException
 
+
 class SnormpyModuleClient(object):
     def __init__(self, client, module):
         self.client = client
@@ -234,7 +244,7 @@ class SnormpyModuleClient(object):
             oid = self.client.nodeid('%s::%s' % (self.module, name))
             return SnormpyOIDClient(self.client, oid)
         except SmiError:
-            raise AttributeError, name
+            raise AttributeError(name)
 
     def __getattr__(self, name):
         if name.startswith('_'):
@@ -251,6 +261,7 @@ class SnormpyModuleClient(object):
         results = self.match(*tablenames)
         return dict([(resline[0], dict(zip(tablenames, resline[1]))) for resline in results.iteritems()])
 
+
 class SnormpyOIDClient(object):
     def __init__(self, client, oid):
         self.client = client
@@ -260,7 +271,7 @@ class SnormpyOIDClient(object):
         try:
             return SnormpyOIDClient(self.client, self.oid + (int(name),))
         except ValueError:
-            raise AttributeError, name
+            raise AttributeError(name)
 
     def __getattr__(self, name):
         if name.startswith('_'):
@@ -275,4 +286,3 @@ class SnormpyOIDClient(object):
 
     def table(self):
         return self.client.gettable(self.oid)
-
